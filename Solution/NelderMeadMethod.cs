@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Solution
 {
@@ -38,106 +34,110 @@ namespace Solution
         // Выполняет поиск экстремума (минимума) функции F
         public double[] Run()
         {
-            int imi = -1, ima = -1;
-            int j = 0, kr = 0, jMx = 10000; // Предельное число шагов алгоритма (убрать после отладки)
+            int imin = -1, imax = -1;
+            int j = 0, kr = 0;
             double[] X_R = new double[count];
-            double Fmi, Fma, F_R;
+            double Fmin, Fmax, F_R;
             const int kr_todo = 60; // kr_todo - число шагов алгоритма, после выполнения которых симплекс восстанавливается
 
             MakeSimplex(X, edgeLengthInitial);
-            while (IsStop() && j < jMx) {
+            while (IsStop()) {
                 j++; // Число итераций
                 kr++;
                 if (kr == kr_todo) {
                     kr = 0;
                     SimplexRestore(); // Восстановление симплекса
                 }
-                Fmi = MinValue(ref imi);
-                Fma = MaxValue(ref ima); // ima - Номер отражаемой вершины
+                Fmin = MinValue(ref imin);
+                Fmax = MaxValue(ref imax); // imax - Номер отражаемой вершины
                 for (int i = 0; i < count; i++) {
-                    X[i] = simplex[i, ima];
+                    X[i] = simplex[i, imax];
                 }
-                Reflection(ima); // Отражение
+                Reflection(imax); // Отражение
                 for (int i = 0; i < count; i++) {
-                    X_R[i] = simplex[i, ima];
+                    X_R[i] = simplex[i, imax];
                 }
-                F_R = Function(X_R); // Значение функции в вершине ima симплекса после отражения
-                if (F_R > Fma) {
-                    Compression(ima, Fma);
+                F_R = Function(X_R); // Значение функции в вершине imax симплекса после отражения
+                if (F_R > Fmax) {
+                    Compression(imax, Fmax);
                 }
-                else if (F_R < Fmi) {
-                    Stretching(ima, Fmi, F_R, X_R);
+                else if (F_R < Fmin) {
+                    Stretching(imax, Fmin, F_R, X_R);
                 }
                 else {
-                    functionValues[ima] = F_R;
+                    functionValues[imax] = F_R;
                 }
             }
             Console.WriteLine("Число итераций: " + j);
             return X;
         }
 
-        private void Compression(int ima, double Fma)
+        private void Compression(int imax, double Fmax)
         {
             double[] X2 = new double[count];
             double F_S;
 
-            ShrinkingExpansion(ima, beta); // Сжатие
+            ShrinkingExpansion(imax, beta); // Сжатие
             for (int i = 0; i < count; i++) {
-                X2[i] = simplex[i, ima];
+                X2[i] = simplex[i, imax];
             }
-            F_S = Function(X2); // Значение функции в вершине ima симплекса после его сжатия
-            if (F_S > Fma) {
-                Reduction(ima, X2);
+            F_S = Function(X2); // Значение функции в вершине imax симплекса после его сжатия
+            if (F_S > Fmax) {
+                Reduction(imax, X2);
             }
             else {
-                functionValues[ima] = F_S;
+                functionValues[imax] = F_S;
             }
         }
 
-        private void Reduction(int ima, double[] X2)
+        private void Reduction(int imax, double[] X2)
         {
             for (int i = 0; i < count; i++) {
-                simplex[i, ima] = X[i];
+                simplex[i, imax] = X[i];
             }
-            Reduction(ima); // Редукция
+            Reduction(imax); // Редукция
             for (int i = 0; i < count + 1; i++) {
-                if (i == ima) continue;
+                if (i == imax) continue;
                 for (int j = 0; j < count; j++) {
                     X2[j] = simplex[j, i];
                 }
-                // Значения функций в вершинах симплекса после редукции. В вершине ima значение функции сохраняется
+                // Значения функций в вершинах симплекса после редукции. В вершине imax значение функции сохраняется
                 functionValues[i] = Function(X2);
             }
         }
 
-        private void Stretching(int ima, double Fmi, double F_R, double[] X_R)
+        private void Stretching(int imax, double Fmin, double F_R, double[] X_R)
         {
             double[] X2 = new double[count];
             double F_E;
 
-            ShrinkingExpansion(ima, alpha); // Растяжение
+            ShrinkingExpansion(imax, alpha); // Растяжение
             for (int i = 0; i < count; i++) {
-                X2[i] = simplex[i, ima];
+                X2[i] = simplex[i, imax];
             }
-            F_E = Function(X2); // Значение функции в вершине ima симплекса после его растяжения
-            if (F_E > Fmi) {
+            F_E = Function(X2); // Значение функции в вершине imax симплекса после его растяжения
+            if (F_E > Fmin) {
                 for (int j = 0; j < count; j++) {
-                    simplex[j, ima] = X_R[j];
+                    simplex[j, imax] = X_R[j];
                 }
-                functionValues[ima] = F_R;
+                functionValues[imax] = F_R;
             }
             else {
-                functionValues[ima] = F_E;
+                functionValues[imax] = F_E;
             }
         }
 
-        public double Function(double[] x)
+        public double Function(double[] X)
         {
+            double[] x = new double[count + 1];
+            for (int i = 1; i < count + 1; i++) {
+                x[i] = X[i - 1];
+            }
             return (double)DynamicExpressionParser.ParseLambda(new[] { Expression.Parameter(typeof(double[]), "x") }, null, expression).Compile().DynamicInvoke(x);
         }
 
         // Создает из точки X регулярный симплекс с длиной ребра L и с NP + 1 вершиной
-        // Формирует массив FN значений оптимизируемой функции F в вершинах симплекса
+        // Формирует массив functionValues значений оптимизируемой функции F в вершинах симплекса
         private void MakeSimplex(double[] X, double L)
         {
             double qn = Math.Sqrt(1.0 + count) - 1.0;
@@ -222,47 +222,47 @@ namespace Solution
             return Math.Sqrt(L);
         }
 
-        private double MinValue(ref int imi) // Минимальный элемент массива и его индекс
+        private double MinValue(ref int imin) // Минимальный элемент массива и его индекс
         {
-            double fmi = double.MaxValue;
+            double fmin = double.MaxValue;
             for (int i = 0; i < count + 1; i++) {
-                if (functionValues[i] < fmi) {
-                    fmi = functionValues[i];
-                    imi = i;
+                if (functionValues[i] < fmin) {
+                    fmin = functionValues[i];
+                    imin = i;
                 }
             }
-            return fmi;
+            return fmin;
         }
 
-        private double MaxValue(ref int ima) // Максимальный элемент массива и его индекс
+        private double MaxValue(ref int imax) // Максимальный элемент массива и его индекс
         {
-            double fma = double.MinValue;
+            double fmax = double.MinValue;
             for (int i = 0; i < count + 1; i++) {
-                if (functionValues[i] > fma) {
-                    fma = functionValues[i];
-                    ima = i;
+                if (functionValues[i] > fmax) {
+                    fmax = functionValues[i];
+                    imax = i;
                 }
             }
-            return fma;
+            return fmax;
         }
 
         private void SimplexRestore() // Восстанавление симплекса
         {
-            int imi = -1, imi2 = -1;
-            double fmi, fmi2 = double.MaxValue;
+            int imin = -1, imin2 = -1;
+            double fmin, fmin2 = double.MaxValue;
             double[] X = new double[count];
             double[] X2 = new double[count];
-            fmi = MinValue(ref imi);
+            fmin = MinValue(ref imin);
 
             for (int i = 0; i < count + 1; i++) {
-                if (functionValues[i] != fmi && functionValues[i] < fmi2) {
-                    fmi2 = functionValues[i];
-                    imi2 = i;
+                if (functionValues[i] != fmin && functionValues[i] < fmin2) {
+                    fmin2 = functionValues[i];
+                    imin2 = i;
                 }
             }
             for (int i = 0; i < count; i++) {
-                X[i] = simplex[i, imi];
-                X2[i] = simplex[i, imi] - simplex[i, imi2];
+                X[i] = simplex[i, imin];
+                X2[i] = simplex[i, imin] - simplex[i, imin2];
             }
             MakeSimplex(X, FindEdgeLength(X2));
         }
