@@ -4,7 +4,7 @@ using System.Linq.Expressions;
 
 namespace Solution
 {
-    internal class NelderMeadMethod
+    public class NelderMeadMethod
     {
         private const double edgeLengthInitial = 0.4; // Начальная длина ребра симплекса
         private const double edgeLengthLimit = 1.0e-5; // Предельное значение длины ребра симплекса
@@ -13,12 +13,12 @@ namespace Solution
         private const double beta = 0.5; // Коэффициент сжатия симплекса
         private const double gamma = 0.5; // Коэффициент редукции симплекса
 
-        private readonly string expression; //"Math.Pow(x[0], 2) + x[0] * x[1] + Math.Pow(x[1], 2) - 6*x[0] -9*x[1]"
-        private readonly double[] X; // Первая вершина начального симплекса (начальная точка)
-        private readonly int count; // count - число аргументов функции
+        public string expression; //"Math.Pow(x[1], 2) + x[1] * x[2] + Math.Pow(x[2], 2) - 6*x[1] -9*x[2]"
+        public double[] X; // Первая вершина начального симплекса (начальная точка)
+        public int count; // count - число аргументов функции
 
-        private readonly double[,] simplex; // count + 1 - число вершин симплекса
-        private readonly double[] functionValues;
+        public double[,] simplex; // count + 1 - число вершин симплекса
+        public double[] functionValues;
 
         public NelderMeadMethod(string expression, int count) {
             this.expression = expression;
@@ -72,7 +72,7 @@ namespace Solution
             return X;
         }
 
-        private void Compression(int imax, double Fmax)
+        public void Compression(int imax, double Fmax)
         {
             double[] X2 = new double[count];
             double F_S;
@@ -90,7 +90,7 @@ namespace Solution
             }
         }
 
-        private void Reduction(int imax, double[] X2)
+        public void Reduction(int imax, double[] X2)
         {
             for (int i = 0; i < count; i++) {
                 simplex[i, imax] = X[i];
@@ -106,7 +106,7 @@ namespace Solution
             }
         }
 
-        private void Stretching(int imax, double Fmin, double F_R, double[] X_R)
+        public void Stretching(int imax, double Fmin, double F_R, double[] X_R)
         {
             double[] X2 = new double[count];
             double F_E;
@@ -138,7 +138,7 @@ namespace Solution
 
         // Создает из точки X регулярный симплекс с длиной ребра L и с NP + 1 вершиной
         // Формирует массив functionValues значений оптимизируемой функции F в вершинах симплекса
-        private void MakeSimplex(double[] X, double L)
+        public void MakeSimplex(double[] X, double L)
         {
             double qn = Math.Sqrt(1.0 + count) - 1.0;
             double q2 = L / Math.Sqrt(2.0) * count;
@@ -164,7 +164,7 @@ namespace Solution
             }
         }
 
-        private double[] CenterOfGravity(int k) // Центр тяжести симплекса
+        public double[] CenterOfGravity(int k) // Центр тяжести симплекса
         {
             double s;
             double[] xc = new double[count];
@@ -181,7 +181,7 @@ namespace Solution
             return xc;
         }
 
-        private void Reflection(int k) // Отражение вершины с номером k относительно центра тяжести
+        public void Reflection(int k) // Отражение вершины с номером k относительно центра тяжести
         {
             double[] xc = CenterOfGravity(k);
             for (int i = 0; i < count; i++) {
@@ -189,7 +189,7 @@ namespace Solution
             }
         }
 
-        private void Reduction(int k) // Редукция симплекса к вершине k
+        public void Reduction(int k) // Редукция симплекса к вершине k
         {
             double[] xk = new double[count];
             for (int i = 0; i < count; i++) {
@@ -205,7 +205,7 @@ namespace Solution
             }
         }
 
-        private void ShrinkingExpansion(int k, double alpha_beta) // Сжатие/растяжение симплекса. alpha_beta – коэффициент растяжения/сжатия
+        public void ShrinkingExpansion(int k, double alpha_beta) // Сжатие/растяжение симплекса. alpha_beta – коэффициент растяжения/сжатия
         {
             double[] xc = CenterOfGravity(k);
             for (int i = 0; i < count; i++) {
@@ -213,7 +213,7 @@ namespace Solution
             }
         }
 
-        private double FindEdgeLength(double[] X2) // Длиина ребра симплекса
+        public double FindEdgeLength(double[] X2) // Длиина ребра симплекса
         {
             double L = 0;
             for (int i = 0; i < count; i++) {
@@ -222,7 +222,7 @@ namespace Solution
             return Math.Sqrt(L);
         }
 
-        private double MinValue(ref int imin) // Минимальный элемент массива и его индекс
+        public double MinValue(ref int imin) // Минимальный элемент массива и его индекс
         {
             double fmin = double.MaxValue;
             for (int i = 0; i < count + 1; i++) {
@@ -234,7 +234,7 @@ namespace Solution
             return fmin;
         }
 
-        private double MaxValue(ref int imax) // Максимальный элемент массива и его индекс
+        public double MaxValue(ref int imax) // Максимальный элемент массива и его индекс
         {
             double fmax = double.MinValue;
             for (int i = 0; i < count + 1; i++) {
@@ -246,7 +246,7 @@ namespace Solution
             return fmax;
         }
 
-        private void SimplexRestore() // Восстанавление симплекса
+        public void SimplexRestore() // Восстанавление симплекса
         {
             int imin = -1, imin2 = -1;
             double fmin, fmin2 = double.MaxValue;
@@ -267,7 +267,7 @@ namespace Solution
             MakeSimplex(X, FindEdgeLength(X2));
         }
 
-        private bool IsStop() // Возвращает true, если длина хотя бы одного ребра симплекса превышает edgeLengthLimit, или false - в противном случае
+        public bool IsStop() // Возвращает true, если длина хотя бы одного ребра симплекса превышает edgeLengthLimit, или false - в противном случае
         {
             double[] X = new double[count];
             double[] X2 = new double[count];
