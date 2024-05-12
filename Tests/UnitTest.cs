@@ -5,10 +5,10 @@ using System.Linq.Dynamic.Core;
 using Solution;
 using System.Linq;
 
-namespace TestProject1
+namespace Tests
 {
     [TestClass]
-    public class UnitTest1
+    public class UnitTest
     {
         [TestMethod]
         public void TestMethod1()
